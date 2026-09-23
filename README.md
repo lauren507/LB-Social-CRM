@@ -31,7 +31,7 @@ $$);
 
 ## Frontend deployment
 
-Build with `npm run build` and deploy `dist/` on Vercel or Netlify. `vercel.json` and `public/_redirects` provide SPA route fallback. Set the two `VITE_` variables in the hosting dashboard. Add the resulting URL to Supabase Auth redirect allowlist and Google OAuth authorized origins. Do not deploy `.env.local`.
+For free-tier deployment, connect this GitHub repository to **Netlify Free**. `netlify.toml` runs `npm run build` and publishes `dist/`; `public/_redirects` provides the SPA route fallback. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in Netlify's environment variables before the production build. Add the resulting site URL to the Supabase Auth redirect allowlist and Google OAuth authorized origins. Do not deploy `.env.local` or put service keys in Netlify's `VITE_` variables. A deployed frontend without the Supabase project and its configuration remains a sample workspace, not the shared CRM.
 
 ## Data rules
 
