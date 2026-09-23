@@ -1,0 +1,8 @@
+[functions.onboard]
+verify_jwt = false
+[functions.trybe-sync]
+verify_jwt = false
+[functions.trybe-admin]
+verify_jwt = false
+[functions.import-commit]
+verify_jwt = false

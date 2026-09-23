@@ -1,0 +1,14 @@
+import {describe,expect,it} from 'vitest'
+import {applyOnboarding,emptyRow} from '../src/lib/demo'
+import {identityKey,normalizeHandle,qualifies} from '../src/lib/model'
+import {duplicatesOf,mapRow,parseCsv,statusSuggestion} from '../src/lib/importer'
+describe('creator gate and identity',()=>{
+ it('needs an address and a submitted or later status',()=>{expect(qualifies({shipping_address:'  ',deliverable_status:'Posted'})).toBe(false);expect(qualifies({shipping_address:'123 Main',deliverable_status:'In Progress'})).toBe(false);expect(qualifies({shipping_address:'123 Main',deliverable_status:'Submitted'})).toBe(true)})
+ it('normalizes handles and prefers lowercase email for the key',()=>{const row={id:'1',handle_raw:'  @@MixedCase  ',email:null};expect(normalizeHandle(row.handle_raw)).toBe('mixedcase');expect(identityKey(row)).toBe('h:mixedcase');expect(identityKey({...row,email:' Name@Example.com '})).toBe('name@example.com')})
+ it('onboards exactly the selected brands without overwriting existing values',()=>{const existing={...emptyRow('pumps'),creator_name:'Original',handle_raw:'@same',handle_normalized:'same',email:'sam@example.com',shipping_address:'Old address'};const next=applyOnboarding([existing],{full_name:'New',handle:'@same',email:'sam@example.com',platform:'Instagram',shipping_address:'New address',brands:['pumps','gym_snack']});expect(next).toHaveLength(2);expect(next[0].creator_name).toBe('Original');expect(next[0].shipping_address).toBe('Old address');expect(next[0].notes).toContain('New address');expect(next[1].brand).toBe('gym_snack');expect(next[1].contact_status).toBe('Onboarded')})
+})
+describe('import mapping',()=>{
+ it('parses quoted commas, quotes, and lines',()=>expect(parseCsv('Name,Notes\n"A, B","He said ""yes"""\n')).toEqual([['Name','Notes'],['A, B','He said "yes"']]))
+ it('folds legacy columns and flags missing handle',()=>{const headers=['Contact Name','FOLLWERS','Paid?','Restrictions','Samples Request?','Location Contacted','Status','Recieved Video','Running?','Ad Code','NOTES'];const mapping=Object.fromEntries(headers.map((_,i)=>[i,['creator_name','followers','partnership_terms','partnership_terms','deliverable_ask','notes','contact_status','deliverable_status','ad_code','ad_code','notes'][i]]));const row=mapRow(['Maya','12,300','Yes','No reposts','Yes','DM','Replied','Received','Yes','MAYA10','First note'],headers,mapping,'ljco',{});expect(row.followers).toBe(12300);expect(row.partnership_terms).toContain('Restrictions: No reposts');expect(row.deliverable_ask).toContain('Samples requested: Yes');expect(row.ad_code).toBe('[RUNNING] MAYA10');expect(row.notes).toContain('Contacted via: DM');expect(row._warnings).toContain('Needs handle')})
+ it('suggests and detects duplicates by normalized handle',()=>{expect(statusSuggestion('video received','deliverable')).toBe('Submitted');expect(duplicatesOf({handle_raw:' @Maya '},[{handle_raw:'maya'}])).toBe(true)})
+})
